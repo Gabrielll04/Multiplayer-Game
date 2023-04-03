@@ -26,12 +26,15 @@ channel.join()
   .receive('ok', resp => { console.log('Joined successfully', resp) })
   .receive('error', resp => { console.log('Unable to join', resp) })
 
-channel.on('presence_state', (payload) => {
-  presences = Presence.syncState(presences, payload) //pauyload é o objeto de todos os usuários conectados, o syncState coloca esses objetos na array de presence
-  console.log(presences)
+channel.on('presence_diff', (diffPayload) => {// isso permite que de forma dinamica, renderizemos os usuários que entraram e sairam da sala. Sem isso, caso um usuário saia, os outros usuários presentes na sala só notarão a ausência do boneco que acabou de sair após dar f5. Ele funciona comparando as listas de presença, caso algo mude, ele sincroniza essas mudanças.
+  presences = Presence.syncDiff(presences, diffPayload)
 })
-export default socket
 
+channel.on('presence_state', (payload) => {
+  presences = Presence.syncState(presences, payload) //payload é o objeto de todos os usuários conectados, o syncState coloca esses objetos na array de presence
+})
+
+export default socket
 window.addEventListener('keydown', (e) => {
   switch (e.key) {
     case 'w':
