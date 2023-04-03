@@ -9,6 +9,11 @@ defmodule GameWeb.RoomChannel do
 
   def handle_in("playerPosition", %{"uuid" => uuid, "x" => x, "y" => y}, socket) do
     broadcast!(socket, "playerPosition", %{uuid: uuid, x: x, y: y})
+    Presence.update(socket, socket.assigns.uuid, %{
+      uuid: socket.assigns.uuid,
+      x: x,
+      y: y
+    })
     {:noreply, socket}
   end
 
