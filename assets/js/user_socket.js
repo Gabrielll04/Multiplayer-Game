@@ -18,7 +18,6 @@ const playerImage = new Image()
 playerImage.src = '/images/sprites/playerDown.png'
 
 let presences = []
-let players = []
 
 socket.connect()
 let channel = socket.channel("room:lobby", {uuid: uuid})
@@ -51,11 +50,6 @@ window.addEventListener('keydown', (e) => {
       break
   }
   channel.push('playerPosition', {uuid: uuid, x: playerPositionX, y: playerPositionY})
-})
-
-channel.push('addPlayer', {uuid: uuid, x: playerPositionX, y: playerPositionY})
-channel.on('addPlayer', (payload) => {
-  players.push({uuid: payload.uuid, x: payload.x, y: payload.y})
 })
 
 //renderize the game

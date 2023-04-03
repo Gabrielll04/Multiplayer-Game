@@ -17,11 +17,6 @@ defmodule GameWeb.RoomChannel do
     {:noreply, socket}
   end
 
-  def handle_in("addPlayer", %{"uuid" => uuid, "x" => x, "y" => y }, socket) do
-    broadcast!(socket, "addPlayer", %{uuid: uuid, x: x, y: y})
-    {:noreply, socket}
-  end
-
   def handle_info(:after_join, socket) do
     {:ok, _} =
       Presence.track(socket, socket.assigns.uuid, %{
