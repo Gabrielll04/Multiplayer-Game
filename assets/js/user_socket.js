@@ -1,4 +1,4 @@
-import { Socket } from 'phoenix'
+import { Socket, Presence } from 'phoenix'
 const socket = new Socket("/socket", { params: {} })
 const canvas = document.querySelector('canvas')
 
@@ -17,15 +17,21 @@ image.src = '/images/sprites/grasstest_1.png'
 const playerImage = new Image()
 playerImage.src = '/images/sprites/playerDown.png'
 
+let presences = []
 let players = []
 
 socket.connect()
-let channel = socket.channel("room:lobby", {})
+let channel = socket.channel("room:lobby", {uuid: uuid})
 channel.join()
   .receive('ok', resp => { console.log('Joined successfully', resp) })
   .receive('error', resp => { console.log('Unable to join', resp) })
 
+channel.on('presence_state', (payload) => {
+  presences = Presence.syncState(presences, payload) //pauyload é o objeto de todos os usuários conectados, o syncState coloca esses objetos na array de presence
+  console.log(presences)
+})
 export default socket
+
 window.addEventListener('keydown', (e) => {
   switch (e.key) {
     case 'w':
@@ -53,17 +59,17 @@ channel.on('addPlayer', (payload) => {
 function drawGame() {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  const pattern = ctx.createPattern(image, 'repeat')
+  const pattern = ctx.createPattern(image, 'repeat')  
   ctx.fillStyle = pattern
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-  console.log(players)
+console.log(presences)
 
-  Object.values(players).forEach(player => {
+  Object.values(presences).forEach(player => {
     channel.on('playerPosition', (payload) => {
-      if (payload.uuid === player.uuid) {
-        player.x = payload.x
-        player.y = payload.y
+      if (payload.uuid === player.metas[0].uuid) {
+        player.metas[0].x = payload.x
+        player.metas[0].y = payload.y
       }
     })  
 
@@ -73,8 +79,8 @@ function drawGame() {
       0,
       playerImage.width / 4,
       playerImage.height,
-      player.x,
-      player.y,
+      player.metas[0].x,
+      player.metas[0].y,
       playerImage.width / 4,
       playerImage.height
     )
