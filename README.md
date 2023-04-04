@@ -7,12 +7,13 @@ To start your Phoenix server:
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+# About
 
-## Learn more
+This is a small project to better understand Phoenix's Channels and Presents modules. Although it is called a "game", this project is about a single room (lobby) where connected clients are gathered. Each new client that connects to the server receives the list of users already present with their updated location. With each new player connected, the list of players present changes, the server recognizes these changes and communicates them to the connected users. In this way, each new user, all clients receive the rendering of the player's sprite, the same happens with players who are absent, which causes the exclusion of the user in question from the list of present players, which causes the exclusion of their sprite.
 
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
+# To-do
+- [x] Dynamically present players sprite rendering update.
+- [ ] Chat.
+- [ ] Tests.
+- [ ] Organize the project into classes.
+- [ ] Add some design patterns

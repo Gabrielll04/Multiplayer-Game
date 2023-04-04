@@ -49,7 +49,7 @@ window.addEventListener('keydown', (e) => {
       playerPositionX += 20
       break
   }
-  channel.push('playerPosition', {uuid: uuid, x: playerPositionX, y: playerPositionY})
+  channel.push('playerPosition', {x: playerPositionX, y: playerPositionY})
 })
 
 //renderize the game
@@ -62,14 +62,7 @@ function drawGame() {
 
 console.log(presences)
 
-  Object.values(presences).forEach(player => {
-    channel.on('playerPosition', (payload) => {
-      if (payload.uuid === player.metas[0].uuid) {
-        player.metas[0].x = payload.x
-        player.metas[0].y = payload.y
-      }
-    })  
-
+  Object.values(presences).forEach(player => { 
     ctx.drawImage(
       playerImage,
       0,
