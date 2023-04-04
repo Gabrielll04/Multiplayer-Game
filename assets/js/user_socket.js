@@ -20,7 +20,7 @@ playerImage.src = '/images/sprites/playerDown.png'
 let presences = []
 
 socket.connect()
-let channel = socket.channel("room:lobby", {uuid: uuid})
+let channel = socket.channel("room:lobby", { uuid: uuid })
 channel.join()
   .receive('ok', resp => { console.log('Joined successfully', resp) })
   .receive('error', resp => { console.log('Unable to join', resp) })
@@ -33,36 +33,62 @@ channel.on('presence_state', (payload) => {
   presences = Presence.syncState(presences, payload) //payload é o objeto de todos os usuários conectados, o syncState coloca esses objetos na array de presence
 })
 
+//chat
+const chatInput = document.querySelector('#chat-input')
+const chatArea = document.querySelector('#chat-area')
+let isChatInputActive = false
+
+chatInput.addEventListener('keypress', (event) => {
+  isChatInputActive = true
+  if (event.key == 'Enter') {
+    channel.push('new_msg', { uuid: uuid, msg: chatInput.value })
+    chatInput.value = ""
+    isChatInputActive = false
+    chatInput.blur()
+  }
+})
+
+channel.on("new_msg", (payload) => {
+  const messageItem = document.createElement('p')
+  messageItem.innerText = `${payload.uuid}: ${payload.msg}`
+  chatArea.appendChild(messageItem)
+  isChatInputActive = false
+})
+
 export default socket
 window.addEventListener('keydown', (e) => {
   switch (e.key) {
     case 'w':
-      playerPositionY -= 20
+      if (isChatInputActive) return
+      else playerPositionY -= 20
       break
     case 'a':
-      playerPositionX -= 20
+      if (isChatInputActive) return
+      else playerPositionX -= 20
       break
     case 's':
-      playerPositionY += 20
+      if (isChatInputActive) return
+      else playerPositionY += 20
       break
     case 'd':
-      playerPositionX += 20
+      if (isChatInputActive) return
+      else playerPositionX += 20
       break
   }
-  channel.push('playerPosition', {x: playerPositionX, y: playerPositionY})
+  channel.push('player_position', { x: playerPositionX, y: playerPositionY })
 })
 
 //renderize the game
 function drawGame() {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  const pattern = ctx.createPattern(image, 'repeat')  
+  const pattern = ctx.createPattern(image, 'repeat')
   ctx.fillStyle = pattern
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-console.log(presences)
+  console.log(isChatInputActive)
 
-  Object.values(presences).forEach(player => { 
+  Object.values(presences).forEach(player => {
     ctx.drawImage(
       playerImage,
       0,

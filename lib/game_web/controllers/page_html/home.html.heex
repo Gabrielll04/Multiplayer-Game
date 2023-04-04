@@ -1,3 +1,7 @@
-<div class="bg-black overflow-hidden">
-  <canvas class="w-screen xl:w-auto mx-auto"></canvas>
+<div class="flex bg-black overflow-hidden">
+  <div class="flex flex-col absolute self-end z-10 ml-60 mb-10 space-y-2">
+    <div id="chat-area" class="self-end font-bold text-white text-xl"></div>
+    <input id="chat-input" class=" w-80 h-12 pl-2 font-semibold text-white rounded bg-zinc-800 bg-opacity-80 ring-1 ring-amber-600 focus:outline-none"/>
+  </div>
+  <canvas class="relative w-screen xl:w-auto mx-auto"></canvas>
 </div>
