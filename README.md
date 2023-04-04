@@ -14,6 +14,7 @@ This is a small project to better understand Phoenix's Channels and Presents mod
 # To-do
 - [x] Dynamically present players sprite rendering update.
 - [x] Chat.
+- [ ] Chante the camera position to follow player.
 - [ ] Sprite animations
 - [ ] Tests.
 - [ ] Organize the project into classes.
