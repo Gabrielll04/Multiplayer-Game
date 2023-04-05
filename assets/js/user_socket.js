@@ -18,6 +18,7 @@ const playerImage = new Image()
 playerImage.src = '/images/sprites/playerDown.png'
 
 let presences = []
+let isPlayerMoving = false
 
 socket.connect()
 let channel = socket.channel("room:lobby", { uuid: uuid })
@@ -56,7 +57,9 @@ channel.on("new_msg", (payload) => {
 })
 
 export default socket
+
 window.addEventListener('keydown', (e) => {
+  isPlayerMoving = true
   switch (e.key) {
     case 'w':
       if (isChatInputActive) return
@@ -78,6 +81,16 @@ window.addEventListener('keydown', (e) => {
   channel.push('player_position', { x: playerPositionX, y: playerPositionY })
 })
 
+window.addEventListener('keyup', (e) => {
+  isPlayerMoving = false
+})
+
+let frames = {
+  max: 4,
+  val: 0,
+  elapsed: 0
+}
+
 //renderize the game
 function drawGame() {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -86,21 +99,27 @@ function drawGame() {
   ctx.fillStyle = pattern
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-  console.log(isChatInputActive)
-
   Object.values(presences).forEach(player => {
     ctx.drawImage(
       playerImage,
+      frames.val * playerImage.width / frames.max,
       0,
-      0,
-      playerImage.width / 4,
+      playerImage.width / frames.max,
       playerImage.height,
       player.metas[0].x,
       player.metas[0].y,
-      playerImage.width / 4,
+      playerImage.width / frames.max,
       playerImage.height
     )
   })
+  if (!isPlayerMoving) return
+  if (frames.max > 1) {
+    frames.elapsed++
+  }
+  if (frames.elapsed % 10 === 0) {
+    if (frames.val < frames.max - 1) frames.val++
+    else frames.val = 0
+  }
 }
 
 function RAF() {
