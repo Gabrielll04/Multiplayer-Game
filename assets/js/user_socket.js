@@ -1,153 +1,158 @@
 import { Socket, Presence } from 'phoenix'
+import PlayerSprite from './Player'
 
-const socket = new Socket("/socket", { params: {} })
-const canvas = document.querySelector('canvas')
-const ctx = canvas.getContext('2d')
+class Game {
+  constructor() {
+    this._Initialize()
+  }
 
-canvas.width = window.innerWidth / 1.3
-canvas.height = window.innerHeight
+  _Initialize() {
+    this._socket = new Socket("/socket", { params: {} })
+    this._canvas = document.querySelector('canvas')
+    this._ctx = this._canvas.getContext('2d')
 
-const uuid = crypto.randomUUID()
-let playerPositionX = 0
-let playerPositionY = 0
+    this._canvas.width = window.innerWidth / 1.3
+    this._canvas.height = window.innerHeight
 
-const image = new Image()
-image.src = '/images/sprites/grasstest_1.png'
+    this._image = new Image()
+    this._image.src = '/images/sprites/grasstest_1.png'
 
-const sprites = {
-  playerDown: '/images/sprites/playerDown.png',
-  playerUp: '/images/sprites/playerUp.png',
-  playerLeft: '/images/sprites/playerLeft.png',
-  playerRight: '/images/sprites/playerRight.png'
+    this._presence = []
+    this._uuid = crypto.randomUUID()
+    let playerPositionX = 0
+    let playerPositionY = 0
+    const sprites = {
+      playerDown: '/images/sprites/playerDown.png',
+      playerUp: '/images/sprites/playerUp.png',
+      playerLeft: '/images/sprites/playerLeft.png',
+      playerRight: '/images/sprites/playerRight.png'
+    }
+
+    this._presences = []
+    this._isPlayerMoving = false
+    this._isChatInputActive = false
+
+    this._playerImage = new Image()
+    this._playerImage.src = sprites.playerDown
+
+    this._Connection()
+    this._Chat()
+
+    window.addEventListener('keydown', (e) => {
+      if (!this._isChatInputActive) this._isPlayerMoving = true
+      switch (e.key) {
+        case 'w':
+          if (this._isChatInputActive) return
+          else {
+            playerPositionY -= 10
+            this._playerImage.src = sprites.playerUp
+          }
+          break
+        case 'a':
+          if (this._isChatInputActive) return
+          else {
+            playerPositionX -= 10
+            this._playerImage.src = sprites.playerLeft
+          }
+          break
+        case 's':
+          if (this._isChatInputActive) return
+          else {
+            playerPositionY += 10
+            this._playerImage.src = sprites.playerDown
+          }
+          break
+        case 'd':
+          if (this._isChatInputActive) return
+          else {
+            playerPositionX += 10
+            this._playerImage.src = sprites.playerRight
+          }
+          break
+      }
+      this._channel.push('player_position', { x: playerPositionX, y: playerPositionY, playerImage: this._playerImage.src })
+    })
+
+    window.addEventListener('keyup', (e) => {
+      this._isPlayerMoving = false
+    })
+
+    this._frames = {
+      max: 4,
+      val: 0,
+      elapsed: 0
+    }
+
+    this._RAF()
+  }
+
+  _Chat() {
+    const chatInput = document.querySelector('#chat-input')
+    const chatArea = document.querySelector('#chat-area')
+
+    chatInput.addEventListener('keypress', (event) => {
+      this._isChatInputActive = true
+      if (event.key == 'Enter') {
+        this._channel.push('new_msg', { uuid: this._uuid, msg: chatInput.value })
+        chatInput.value = ""
+        this._isChatInputActive = false
+        chatInput.blur()
+      }
+    })
+
+    this._channel.on('new_msg', (payload) => {
+      const messageItem = document.createElement('p')
+      messageItem.innerText = `${payload.uuid}: ${payload.msg}`
+      chatArea.appendChild(messageItem)
+      this._isChatInputActive = false
+    })
+  }
+
+  _Connection() {
+    this._socket.connect()
+    this._channel = this._socket.channel("room:lobby", { uuid: this._uuid })
+    this._channel.join()
+      .receive('ok', resp => { console.log('Joined successfully', resp) })
+      .receive('error', resp => { console.log('Unable to join', resp) })
+
+    this._channel.on('presence_diff', (diffPayload) => {// isso permite que de forma dinamica, renderizemos os usuários que entraram e sairam da sala. Sem isso, caso um usuário saia, os outros usuários presentes na sala só notarão a ausência do boneco que acabou de sair após dar f5. Ele funciona comparando as listas de presença, caso algo mude, ele sincroniza essas mudanças.
+      this._presences = Presence.syncDiff(this._presences, diffPayload)
+    })
+
+    this._channel.on('presence_state', (payload) => {
+      this._presences = Presence.syncState(this._presences, payload) //payload é o objeto de todos os usuários conectados, o syncState coloca esses objetos na array de presence
+    })
+  }
+
+  _RAF() {
+    requestAnimationFrame(() => {
+
+      this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height)
+
+      const pattern = this._ctx.createPattern(this._image, 'repeat')
+      this._ctx.fillStyle = pattern
+      this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height)
+      Object.values(this._presences).forEach(player =>  {
+        this._playerImage.src = player.metas[0].playerImage
+  
+        this._player = new PlayerSprite({
+          image: this._playerImage,
+          position: {
+            x: player.metas[0].x,
+            y: player.metas[0].y,
+          },
+          frames: this._frames,
+          moving: this._isPlayerMoving,
+          _ctx: this._ctx
+        })
+        this._frames = this._player.frames
+        this._player.draw()
+      })
+      this._RAF()
+    })
+  }
 }
 
-let playerImage = new Image()
-playerImage.src = sprites.playerDown
 
-let presences = []
-let isPlayerMoving = false
-
-socket.connect()
-let channel = socket.channel("room:lobby", { uuid: uuid })
-channel.join()
-  .receive('ok', resp => { console.log('Joined successfully', resp) })
-  .receive('error', resp => { console.log('Unable to join', resp) })
-
-channel.on('presence_diff', (diffPayload) => {
-  presences = Presence.syncDiff(presences, diffPayload)
-})
-
-channel.on('presence_state', (payload) => {
-  presences = Presence.syncState(presences, payload)
-})
-
-//chat
-const chatInput = document.querySelector('#chat-input')
-const chatArea = document.querySelector('#chat-area')
-let isChatInputActive = false
-
-chatInput.addEventListener('keypress', (event) => {
-  isChatInputActive = true
-  if (event.key == 'Enter') {
-    channel.push('new_msg', { uuid: uuid, msg: chatInput.value })
-    chatInput.value = ""
-    isChatInputActive = false
-    chatInput.blur()
-  }
-})
-
-channel.on("new_msg", (payload) => {
-  const messageItem = document.createElement('p')
-  messageItem.innerText = `${payload.uuid}: ${payload.msg}`
-  chatArea.appendChild(messageItem)
-  isChatInputActive = false
-})
-
-export default socket
-
-window.addEventListener('keydown', (e) => {
-  if (!isChatInputActive) isPlayerMoving = true
-  switch (e.key) {
-    case 'w':
-      if (isChatInputActive) return
-      else {
-        playerPositionY -= 10
-        playerImage.src = sprites.playerUp
-      }
-      break
-    case 'a':
-      if (isChatInputActive) return
-      else {
-        playerPositionX -= 10
-        playerImage.src = sprites.playerLeft
-      }
-      break
-    case 's':
-      if (isChatInputActive) return
-      else {
-        playerPositionY += 10
-        playerImage.src = sprites.playerDown
-      }
-      break
-    case 'd':
-      if (isChatInputActive) return
-      else {
-        playerPositionX += 10
-        playerImage.src = sprites.playerRight
-      }
-      break
-  }
-  channel.push('player_position', { x: playerPositionX, y: playerPositionY, playerImage: playerImage.src })
-
-})
-
-window.addEventListener('keyup', (e) => {
-  isPlayerMoving = false
-
-})
-
-let frames = {
-  max: 4,
-  val: 0,
-  elapsed: 0
-}
-
-//renderize the game
-function drawGame() {
-
-  console.log(presences)
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-  const pattern = ctx.createPattern(image, 'repeat')
-  ctx.fillStyle = pattern
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-  Object.values(presences).forEach(player => {
-    playerImage.src = player.metas[0].playerImage
-    ctx.drawImage(
-      playerImage,
-      frames.val * playerImage.width / frames.max,
-      0,
-      playerImage.width / frames.max,
-      playerImage.height,
-      player.metas[0].x,
-      player.metas[0].y,
-      playerImage.width / frames.max,
-      playerImage.height
-    )
-  })
-  if (!isPlayerMoving) return
-  if (frames.max > 1) {
-    frames.elapsed++
-  }
-  if (frames.elapsed % 10 === 0) {
-    if (frames.val < frames.max - 1) frames.val++
-    else frames.val = 0
-  }
-}
-
-function RAF() {
-  window.requestAnimationFrame(RAF)
-  drawGame()
-}
-RAF()
+let _APP = new Game()
+export default _APP._socket
