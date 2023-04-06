@@ -14,8 +14,27 @@ let playerPositionY = 0
 const image = new Image()
 image.src = '/images/sprites/grasstest_1.png'
 
-const playerImage = new Image()
-playerImage.src = '/images/sprites/playerDown.png'
+const sprites = {
+  playerDown: '/images/sprites/playerDown.png',
+  playerUp: '/images/sprites/playerUp.png',
+  playerLeft: '/images/sprites/playerLeft.png',
+  playerRight: '/images/sprites/playerRight.png'
+}
+
+let playerImage = new Image()
+playerImage.src = sprites.playerDown
+
+// const playerImageDown = new Image()
+// playerImageDown.src = '/images/sprites/playerDown.png'
+
+// const playerImageUp = new Image()
+// playerImageUp.src = '/images/sprites/playerUp.png'
+
+// const playerImageLeft = new Image()
+// playerImageLeft.src = '/images/sprites/playerLeft.png'
+
+// const playerImageRight = new Image()
+// playerImageRight.src = '/images/sprites/playerRight.png'
 
 let presences = []
 let isPlayerMoving = false
@@ -59,23 +78,35 @@ channel.on("new_msg", (payload) => {
 export default socket
 
 window.addEventListener('keydown', (e) => {
-  isPlayerMoving = true
+  if (!isChatInputActive) isPlayerMoving = true
   switch (e.key) {
     case 'w':
       if (isChatInputActive) return
-      else playerPositionY -= 20
+      else {
+        playerPositionY -= 10
+        playerImage.src = sprites.playerUp
+      }
       break
     case 'a':
       if (isChatInputActive) return
-      else playerPositionX -= 20
+      else {
+        playerPositionX -= 10
+        playerImage.src = sprites.playerLeft
+      }
       break
     case 's':
       if (isChatInputActive) return
-      else playerPositionY += 20
+      else {
+        playerPositionY += 10
+        playerImage.src = sprites.playerDown
+      }
       break
     case 'd':
       if (isChatInputActive) return
-      else playerPositionX += 20
+      else {
+        playerPositionX += 10
+        playerImage.src = sprites.playerRight
+      }
       break
   }
   channel.push('player_position', { x: playerPositionX, y: playerPositionY })
@@ -116,7 +147,7 @@ function drawGame() {
   if (frames.max > 1) {
     frames.elapsed++
   }
-  if (frames.elapsed % 10 === 0) {
+  if (frames.elapsed % 20 === 0) {
     if (frames.val < frames.max - 1) frames.val++
     else frames.val = 0
   }
