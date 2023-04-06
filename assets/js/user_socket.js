@@ -1,7 +1,7 @@
 import { Socket, Presence } from 'phoenix'
+
 const socket = new Socket("/socket", { params: {} })
 const canvas = document.querySelector('canvas')
-
 const ctx = canvas.getContext('2d')
 
 canvas.width = window.innerWidth / 1.3
@@ -24,18 +24,6 @@ const sprites = {
 let playerImage = new Image()
 playerImage.src = sprites.playerDown
 
-// const playerImageDown = new Image()
-// playerImageDown.src = '/images/sprites/playerDown.png'
-
-// const playerImageUp = new Image()
-// playerImageUp.src = '/images/sprites/playerUp.png'
-
-// const playerImageLeft = new Image()
-// playerImageLeft.src = '/images/sprites/playerLeft.png'
-
-// const playerImageRight = new Image()
-// playerImageRight.src = '/images/sprites/playerRight.png'
-
 let presences = []
 let isPlayerMoving = false
 
@@ -45,12 +33,12 @@ channel.join()
   .receive('ok', resp => { console.log('Joined successfully', resp) })
   .receive('error', resp => { console.log('Unable to join', resp) })
 
-channel.on('presence_diff', (diffPayload) => {// isso permite que de forma dinamica, renderizemos os usuários que entraram e sairam da sala. Sem isso, caso um usuário saia, os outros usuários presentes na sala só notarão a ausência do boneco que acabou de sair após dar f5. Ele funciona comparando as listas de presença, caso algo mude, ele sincroniza essas mudanças.
+channel.on('presence_diff', (diffPayload) => {
   presences = Presence.syncDiff(presences, diffPayload)
 })
 
 channel.on('presence_state', (payload) => {
-  presences = Presence.syncState(presences, payload) //payload é o objeto de todos os usuários conectados, o syncState coloca esses objetos na array de presence
+  presences = Presence.syncState(presences, payload)
 })
 
 //chat
@@ -109,11 +97,13 @@ window.addEventListener('keydown', (e) => {
       }
       break
   }
-  channel.push('player_position', { x: playerPositionX, y: playerPositionY })
+  channel.push('player_position', { x: playerPositionX, y: playerPositionY, playerImage: playerImage.src })
+
 })
 
 window.addEventListener('keyup', (e) => {
   isPlayerMoving = false
+
 })
 
 let frames = {
@@ -124,6 +114,8 @@ let frames = {
 
 //renderize the game
 function drawGame() {
+
+  console.log(presences)
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
   const pattern = ctx.createPattern(image, 'repeat')
@@ -131,6 +123,7 @@ function drawGame() {
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
   Object.values(presences).forEach(player => {
+    playerImage.src = player.metas[0].playerImage
     ctx.drawImage(
       playerImage,
       frames.val * playerImage.width / frames.max,
@@ -147,7 +140,7 @@ function drawGame() {
   if (frames.max > 1) {
     frames.elapsed++
   }
-  if (frames.elapsed % 20 === 0) {
+  if (frames.elapsed % 10 === 0) {
     if (frames.val < frames.max - 1) frames.val++
     else frames.val = 0
   }
