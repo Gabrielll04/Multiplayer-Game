@@ -25,7 +25,6 @@ class Game {
     }
 
     this._presences = []
-    this._isPlayerMoving = false
     this._isChatInputActive = false
 
     this._playerImage = new Image()
@@ -57,8 +56,7 @@ class Game {
     }
 
     function notifyAll(command) {
-      console.log(`Notifying ${state.observers.length} observers`)
-      for (const observerFunction of state.observers) {//in returns the index of the array, of returns the value
+      for (const observerFunction of state.observers) {//"in" returns the index of the array, "of" returns the value
         observerFunction(command)
       }
     }
@@ -72,12 +70,13 @@ class Game {
       notifyAll(command)
     }
 
-    // if (!this._isChatInputActive) this._isPlayerMoving = true
-    window.addEventListener('keydown', handleKeydown)
+    const handleKeyup = (event) => {
 
-    window.addEventListener('keyup', (e) => {
-      this._isPlayerMoving = false
-    })
+      this._channel.push('update_player_moving', { x: this._presences[this._uuid].metas[0].x, y: this._presences[this._uuid].metas[0].y, playerImage: this._presences[this._uuid].metas[0].playerImage, isMoving: false })
+    }
+
+    window.addEventListener('keydown', handleKeydown)
+    window.addEventListener('keyup', handleKeyup)
 
     return {
       subscriber
@@ -126,22 +125,20 @@ class Game {
 
     return {
       movePlayer: (command) => {
-        const keyPressed = command.keyPressed
 
-        console.log(`key ${keyPressed} pressed`)
-
-
-        
-        console.log(this._presences[this._uuid].metas[0].x)
-        this._channel.push('player_position', { keyPressed: keyPressed, x: this._presences[this._uuid].metas[0].x, y: this._presences[this._uuid].metas[0].y, playerImage: this._presences[this._uuid].metas[0].playerImage })
+        this._channel.push('player_position', {
+          keyPressed: command.keyPressed,
+          x: this._presences[this._uuid].metas[0].x,
+          y: this._presences[this._uuid].metas[0].y,
+          playerImage: this._presences[this._uuid].metas[0].playerImage,
+          isMoving: true
+        })
       }
     }
   }
 
   _RAF() {
     requestAnimationFrame(() => {
-
-      console.log(this._presences[this._uuid])
       this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height)
 
       const pattern = this._ctx.createPattern(this._image, 'repeat')
@@ -157,7 +154,7 @@ class Game {
             y: player.metas[0].y,
           },
           frames: this._frames,
-          moving: this._isPlayerMoving,
+          moving: player.metas[0].playerMoving,
           _ctx: this._ctx,
         })
         this._player.draw()
