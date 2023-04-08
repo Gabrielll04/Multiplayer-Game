@@ -17,13 +17,6 @@ class Game {
     this._image = new Image()
     this._image.src = '/images/sprites/grasstest_1.png'
 
-    const sprites = {
-      playerDown: '/images/sprites/playerDown.png',
-      playerUp: '/images/sprites/playerUp.png',
-      playerLeft: '/images/sprites/playerLeft.png',
-      playerRight: '/images/sprites/playerRight.png'
-    }
-
     this._presences = []
     this._isChatInputActive = false
 
@@ -70,7 +63,7 @@ class Game {
       notifyAll(command)
     }
 
-    const handleKeyup = (event) => {
+    const handleKeyup = () => {
 
       this._channel.push('update_player_moving', { x: this._presences[this._uuid].metas[0].x, y: this._presences[this._uuid].metas[0].y, playerImage: this._presences[this._uuid].metas[0].playerImage, isMoving: false })
     }
@@ -99,7 +92,8 @@ class Game {
 
     this._channel.on('new_msg', (payload) => {
       const messageItem = document.createElement('p')
-      messageItem.innerText = `${payload.uuid}: ${payload.msg}`
+      const splitedId = payload.uuid.split('-')
+      messageItem.innerText = `${splitedId[0]}: ${payload.msg}`
       chatArea.appendChild(messageItem)
       this._isChatInputActive = false
     })
@@ -125,6 +119,13 @@ class Game {
 
     return {
       movePlayer: (command) => {
+        if (this._isChatInputActive) return
+
+
+        // let isAllowedKey = false
+        // if (['w', 'a', 's', 'd'].includes(command.keyPressed)) {
+        //   isAllowedKey = true
+        // }
 
         this._channel.push('player_position', {
           keyPressed: command.keyPressed,
@@ -144,11 +145,12 @@ class Game {
       const pattern = this._ctx.createPattern(this._image, 'repeat')
       this._ctx.fillStyle = pattern
       this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height)
+
       Object.values(this._presences).forEach(player => {
         this._playerImage.src = player.metas[0].playerImage
 
         this._player = new PlayerSprite({
-          image: this._playerImage,
+          image: this._playerImage.src,
           position: {
             x: player.metas[0].x,
             y: player.metas[0].y,

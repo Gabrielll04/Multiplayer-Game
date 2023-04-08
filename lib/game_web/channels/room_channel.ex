@@ -41,15 +41,34 @@ defmodule GameWeb.RoomChannel do
     update_x = update_x(keyPressed, x)
     update_y = update_y(keyPressed, y)
 
+    update_player_image = update_player_image(keyPressed, playerImage)
+
+    update_player_moving = update_player_moving(keyPressed)
+
     Presence.update(socket, socket.assigns.uuid, %{
       uuid: socket.assigns.uuid,
       x: update_x,
       y: update_y,
-      playerImage: playerImage,
-      playerMoving: isMoving
+      playerImage: update_player_image,
+      playerMoving: update_player_moving
     })
-
     {:noreply, socket}
+  end
+
+  defp update_player_image("a", playerImage), do: "/images/sprites/playerLeft.png"
+  defp update_player_image("d", playerImage), do: "/images/sprites/playerRight.png"
+  defp update_player_image("w", playerImage), do: "/images/sprites/playerUp.png"
+  defp update_player_image("s", playerImage), do: "/images/sprites/playerDown.png"
+  defp update_player_image(_, playerImage), do: playerImage
+
+  defp update_player_moving(keyPressed) do
+    case keyPressed do
+      "a" -> true
+      "d" -> true
+      "w" -> true
+      "s" -> true
+      _ -> false
+    end
   end
 
   defp update_x("a", x), do: x - 10

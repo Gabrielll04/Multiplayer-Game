@@ -6,25 +6,28 @@ export default class PlayerSprite {
     this.moving = moving || false
     this._ctx = _ctx
     this.width = null
+
+    this.playerImage = new Image()
+    this.playerImage.src = image
   }
 
   draw() {
     if (this.moving) {
-      this.width = this.frames.val * this.image.width / this.frames.max
+      this.width = this.frames.val * this.playerImage.width / this.frames.max
     } else {
       this.width = 0
     }
 
     this._ctx.drawImage(
-      this.image,
+      this.playerImage,
       this.width,
       0,
-      this.image.width / this.frames.max,
-      this.image.height,
+      this.playerImage.width / this.frames.max,
+      this.playerImage.height,
       this.position.x,
       this.position.y,
-      this.image.width / this.frames.max,
-      this.image.height 
+      this.playerImage.width / this.frames.max,
+      this.playerImage.height 
     )
 
     if (!this.moving) return
