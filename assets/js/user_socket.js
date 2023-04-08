@@ -16,8 +16,7 @@ class Game {
 
     this._image = new Image()
     this._image.src = '/images/sprites/grasstest_1.png'
-
-    this._presence = []
+  
     this._uuid = crypto.randomUUID()
     let playerPositionX = 0
     let playerPositionY = 0
@@ -33,7 +32,6 @@ class Game {
     this._isChatInputActive = false
 
     this._playerImage = new Image()
-    this._playerImage.src = sprites.playerDown
 
     this._Connection()
     this._Chat()
@@ -132,9 +130,9 @@ class Game {
       const pattern = this._ctx.createPattern(this._image, 'repeat')
       this._ctx.fillStyle = pattern
       this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height)
-      Object.values(this._presences).forEach(player =>  {
+      Object.values(this._presences).forEach(player => {
         this._playerImage.src = player.metas[0].playerImage
-  
+
         this._player = new PlayerSprite({
           image: this._playerImage,
           position: {
@@ -143,9 +141,8 @@ class Game {
           },
           frames: this._frames,
           moving: this._isPlayerMoving,
-          _ctx: this._ctx
+          _ctx: this._ctx,
         })
-        this._frames = this._player.frames
         this._player.draw()
       })
       this._RAF()

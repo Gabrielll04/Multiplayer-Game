@@ -7,7 +7,7 @@ defmodule GameWeb.RoomChannel do
     {:ok, assign(socket, :uuid, uuid)}
   end
 
-  def handle_in("player_position", %{"x" => x, "y" => y, "playerImage" => playerImage}, socket) do
+  def handle_in("player_position", %{"x" => x, "y" => y, "playerImage" => playerImage }, socket) do
     Presence.update(socket, socket.assigns.uuid, %{
       uuid: socket.assigns.uuid,
       x: x,
@@ -28,7 +28,7 @@ defmodule GameWeb.RoomChannel do
         uuid: socket.assigns.uuid,
         x: 0,
         y: 0,
-        playerImage: "/images/sprites/playerDown.png"
+        playerImage: "/images/sprites/playerDown.png",
       })
 
     push(socket, "presence_state", Presence.list(socket))

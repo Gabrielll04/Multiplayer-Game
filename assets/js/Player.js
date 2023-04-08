@@ -5,12 +5,9 @@ export default class PlayerSprite {
     this.frames = frames
     this.moving = moving
     this._ctx = _ctx
-    
   }
 
   draw() {
-    console.log(this.moving)
-    console.log(this.frames.val)
     this._ctx.drawImage(
       this.image,
       this.frames.val * this.image.width / this.frames.max,
@@ -25,7 +22,6 @@ export default class PlayerSprite {
 
     if (!this.moving) return
     if (this.frames.max > 1) {
-      console.log("OI")
       this.frames.elapsed++
     }
     if (this.frames.elapsed % 15 === 0) {
