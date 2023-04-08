@@ -16,10 +16,7 @@ class Game {
 
     this._image = new Image()
     this._image.src = '/images/sprites/grasstest_1.png'
-  
-    this._uuid = crypto.randomUUID()
-    let playerPositionX = 0
-    let playerPositionY = 0
+
     const sprites = {
       playerDown: '/images/sprites/playerDown.png',
       playerUp: '/images/sprites/playerUp.png',
@@ -34,46 +31,12 @@ class Game {
     this._playerImage = new Image()
 
     this._Connection()
+
+    const game = this._GameState()
+    const keyboardListener = this._CreateKeyboardListener()
+    keyboardListener.subscriber(game.movePlayer)
+
     this._Chat()
-
-    window.addEventListener('keydown', (e) => {
-      if (!this._isChatInputActive) this._isPlayerMoving = true
-      switch (e.key) {
-        case 'w':
-          if (this._isChatInputActive) return
-          else {
-            playerPositionY -= 10
-            this._playerImage.src = sprites.playerUp
-          }
-          break
-        case 'a':
-          if (this._isChatInputActive) return
-          else {
-            playerPositionX -= 10
-            this._playerImage.src = sprites.playerLeft
-          }
-          break
-        case 's':
-          if (this._isChatInputActive) return
-          else {
-            playerPositionY += 10
-            this._playerImage.src = sprites.playerDown
-          }
-          break
-        case 'd':
-          if (this._isChatInputActive) return
-          else {
-            playerPositionX += 10
-            this._playerImage.src = sprites.playerRight
-          }
-          break
-      }
-      this._channel.push('player_position', { x: playerPositionX, y: playerPositionY, playerImage: this._playerImage.src })
-    })
-
-    window.addEventListener('keyup', (e) => {
-      this._isPlayerMoving = false
-    })
 
     this._frames = {
       max: 4,
@@ -82,6 +45,43 @@ class Game {
     }
 
     this._RAF()
+  }
+
+  _CreateKeyboardListener() {
+    const state = {
+      observers: []
+    }
+
+    function subscriber(observerFunction) {
+      state.observers.push(observerFunction)
+    }
+
+    function notifyAll(command) {
+      console.log(`Notifying ${state.observers.length} observers`)
+      for (const observerFunction of state.observers) {//in returns the index of the array, of returns the value
+        observerFunction(command)
+      }
+    }
+
+    const handleKeydown = (event) => {
+      const command = {
+        playerId: this._uuid,
+        keyPressed: event.key
+      }
+
+      notifyAll(command)
+    }
+
+    // if (!this._isChatInputActive) this._isPlayerMoving = true
+    window.addEventListener('keydown', handleKeydown)
+
+    window.addEventListener('keyup', (e) => {
+      this._isPlayerMoving = false
+    })
+
+    return {
+      subscriber
+    }
   }
 
   _Chat() {
@@ -107,12 +107,15 @@ class Game {
   }
 
   _Connection() {
+    this._uuid = crypto.randomUUID()
     this._socket.connect()
     this._channel = this._socket.channel("room:lobby", { uuid: this._uuid })
     this._channel.join()
       .receive('ok', resp => { console.log('Joined successfully', resp) })
       .receive('error', resp => { console.log('Unable to join', resp) })
+  }
 
+  _GameState() {
     this._channel.on('presence_diff', (diffPayload) => {// isso permite que de forma dinamica, renderizemos os usuários que entraram e sairam da sala. Sem isso, caso um usuário saia, os outros usuários presentes na sala só notarão a ausência do boneco que acabou de sair após dar f5. Ele funciona comparando as listas de presença, caso algo mude, ele sincroniza essas mudanças.
       this._presences = Presence.syncDiff(this._presences, diffPayload)
     })
@@ -120,11 +123,25 @@ class Game {
     this._channel.on('presence_state', (payload) => {
       this._presences = Presence.syncState(this._presences, payload) //payload é o objeto de todos os usuários conectados, o syncState coloca esses objetos na array de presence
     })
+
+    return {
+      movePlayer: (command) => {
+        const keyPressed = command.keyPressed
+
+        console.log(`key ${keyPressed} pressed`)
+
+
+        
+        console.log(this._presences[this._uuid].metas[0].x)
+        this._channel.push('player_position', { keyPressed: keyPressed, x: this._presences[this._uuid].metas[0].x, y: this._presences[this._uuid].metas[0].y, playerImage: this._presences[this._uuid].metas[0].playerImage })
+      }
+    }
   }
 
   _RAF() {
     requestAnimationFrame(() => {
 
+      console.log(this._presences[this._uuid])
       this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height)
 
       const pattern = this._ctx.createPattern(this._image, 'repeat')
